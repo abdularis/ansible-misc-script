@@ -1,0 +1,54 @@
+---
+- hosts: server_ci
+  vars:
+    ANDROID_COMPILE_SDK: "29"
+    ANDROID_BUILD_TOOLS: "29.0.2"
+    ANDROID_SDK_TOOLS_URL: "https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip"
+
+  tasks:
+    - name: "apt update"
+      become: yes
+      apt:
+        update_cache: yes
+
+    - name: "install android sdk dependencies"
+      become: yes
+      apt:
+        name: "{{ item }}"
+      with_items: 
+        - tar
+        - unzip
+        - lib32stdc++6
+        - lib32z1
+
+    - name: "download android command line tools"
+      get_url:
+        url: "{{ ANDROID_SDK_TOOLS_URL }}"
+        dest: "~/android-sdk.zip"
+        mode: "666"
+
+    - name: "create directory for extracting archive"
+      file:
+        path: "~/android-sdk-linux"
+        state: directory
+
+    - name: "unzip android command line tools"
+      unarchive:
+        src: "~/android-sdk.zip"
+        dest: "~/android-sdk-linux"
+        remote_src: yes
+
+    - name: "accepting android cmd tools licenses"
+      shell:
+        chdir: "~"
+        cmd: 'yes | ~/android-sdk-linux/tools/bin/sdkmanager --sdk_root=android-sdk-linux --licenses > /dev/null || true'
+
+    - name: "install android platform tools"
+      shell:
+        chdir: "~"
+        cmd: 'android-sdk-linux/tools/bin/sdkmanager --sdk_root=android-sdk-linux "platform-tools" "platforms;android-{{ ANDROID_COMPILE_SDK }}"'
+
+    - name: "install android build tools sdk"
+      shell:
+        chdir: "~"
+        cmd: 'android-sdk-linux/tools/bin/sdkmanager --sdk_root=android-sdk-linux "build-tools;{{ ANDROID_BUILD_TOOLS }}"'

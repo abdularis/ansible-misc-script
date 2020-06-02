@@ -1,0 +1,32 @@
+---
+- hosts: server_ci
+  become: yes
+  tasks: 
+    - name: "apt update"
+      apt:
+        update_cache: yes
+
+    - name: "install open jdk 8"
+      apt:
+        name: "openjdk-8-jdk"
+
+    - name: "download jenkins stable repo key"
+      shell:
+        cmd: "wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -"
+
+    - name: "add jenkins stable repo"
+      shell:
+        cmd: "sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list"
+
+    - name: "apt update"
+      apt:
+        update_cache: yes
+
+    - name: "install jenkins"
+      apt:
+        name: jenkins
+
+    - name: "enable jenkins service"
+      service: 
+        name: jenkins
+        state: started
